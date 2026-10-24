@@ -1,0 +1,19 @@
+{% extends "project_base.html" %}
+{% block project %}
+<p><a href="{{ url_for('.index') }}">← all links</a></p>
+<div class="pp-card">
+  <h3 style="margin-top:0"><code>/{{ stats.link.code }}</code> → {{ stats.link.url }}</h3>
+  <div class="pp-grid">
+    <div class="pp-stat"><span class="pp-muted">Total clicks</span><b>{{ stats.link.clicks }}</b></div>
+    <div class="pp-stat"><span class="pp-muted">Created</span><b>{{ stats.link.created_at.strftime('%d %b %Y') }}</b></div>
+    <div class="pp-stat"><span class="pp-muted">Last click</span><b>{{ stats.last_click.strftime('%d %b %H:%M') if stats.last_click else '-' }}</b></div>
+  </div>
+</div>
+<div class="pp-card"><b>Clicks per day</b>
+  {% set peak = (stats.clicks_by_day|map(attribute=1)|max) if stats.clicks_by_day else 1 %}
+  {% for day, n in stats.clicks_by_day %}<div style="display:grid;grid-template-columns:100px 1fr 40px;gap:8px;align-items:center;margin:4px 0">
+    <span>{{ day }}</span><div class="pp-bar"><span style="width:{{ 100 * n / peak }}%"></span></div><span>{{ n }}</span></div>
+  {% else %}<p class="pp-muted">No clicks yet - open the short link to record one.</p>{% endfor %}
+</div>
+<div class="pp-card"><b>Top referrers</b>{% for ref, n in stats.top_referrers %}<p>{{ ref }} - {{ n }}</p>{% endfor %}</div>
+{% endblock %}

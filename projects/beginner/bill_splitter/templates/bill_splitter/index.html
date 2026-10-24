@@ -1,0 +1,26 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" class="pp-card">
+  <div class="pp-row">
+    <label>People <input name="people" value="{{ form.people }}" placeholder="Ana Ben Chloe" size="28"></label>
+    <label>Tax % <input name="tax" value="{{ form.tax }}" size="4"></label>
+    <label>Tip % <input name="tip" value="{{ form.tip }}" size="4"></label>
+    <label>Paid by <input name="payer" value="{{ form.payer }}" size="8"></label>
+  </div>
+  <p class="pp-muted" style="margin-bottom:4px">Items - one per line: <code>name, price</code> (shared by everyone) or <code>name, price, Ana Ben</code></p>
+  <textarea name="items">{{ form['items'] }}</textarea>
+  <button class="pp-btn" style="margin-top:8px">Split the bill</button>
+</form>
+{% if error %}<div class="pp-flash error">{{ error }}</div>{% elif bill %}
+<div class="pp-card">
+  <table class="pp-table">
+    <tr><th>Person</th><th>Food & drink</th><th>Tax</th><th>Tip</th><th>Pays</th></tr>
+    {% for s in shares %}<tr><td><b>{{ s.person }}</b></td><td>{{ money(s.subtotal) }}</td><td>{{ money(s.tax) }}</td><td>{{ money(s.tip) }}</td><td><b>{{ money(s.total) }}</b></td></tr>{% endfor %}
+    <tr><th>Total</th><th>{{ money(bill.subtotal) }}</th><th>{{ money(bill.tax) }}</th><th>{{ money(bill.tip) }}</th><th>{{ money(bill.total) }}</th></tr>
+  </table>
+  <p class="pp-muted">The shares add up to exactly {{ money(shares|sum(attribute='total')) }}; leftover cents go to whoever lost most in rounding.</p>
+</div>
+{% if settle %}<div class="pp-card"><h3 style="margin-top:0">💸 Settle up</h3>
+  {% for who, to, cents in settle %}<p>{{ who }} → {{ to }}: <b>{{ money(cents) }}</b></p>{% endfor %}</div>{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.setup') }}" class="pp-card pp-row">
+  <label>Rules <select name="rules">{% for name in rulesets %}<option {% if name == match.opponent.rules.name %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+  <label>Opponent <select name="opponent">{% for name in strategies %}<option {% if name == match.opponent.name %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+  <button class="pp-btn ghost">New match</button>
+  <span class="pp-muted">{{ match.opponent.description }}</span>
+</form>
+
+<div class="pp-grid">
+  <div class="pp-card pp-stat"><span class="pp-muted">You win</span><b style="color:var(--ok)">{{ score[Outcome.WIN] }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Draw</span><b>{{ score[Outcome.DRAW] }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Computer wins</span><b style="color:var(--bad)">{{ score[Outcome.LOSE] }}</b></div>
+</div>
+
+<div class="pp-card" style="text-align:center">
+  {% if last %}
+    <p class="pp-big">{{ icons[last.human] }} vs {{ icons[last.computer] }}</p>
+    <p><b>{{ {'win':'You win! 🎉','lose':'You lose 😬','draw':"It's a draw"}[last.outcome.value] }}</b> {{ last.explanation }}</p>
+  {% else %}<p class="pp-muted">Pick a move. The computer decides before it sees yours.</p>{% endif %}
+  <form method="post" action="{{ url_for('.play') }}" class="pp-row" style="justify-content:center">
+    {% for move in match.opponent.rules.moves %}<button class="pp-btn" name="move" value="{{ move }}" style="font-size:1.2rem">{{ icons[move] }} {{ move.title() }}</button>{% endfor %}
+  </form>
+</div>
+
+{% if rounds %}<div class="pp-card"><b>Last rounds</b> <span class="pp-muted">· your win rate {{ '%.0f'|format(match.win_rate * 100) }}% of decided rounds</span>
+  <p>{% for r in rounds %}<span class="pp-pill">{{ icons[r.human] }}:{{ icons[r.computer] }} {{ {'win':'✅','lose':'❌','draw':'➖'}[r.outcome.value] }}</span>{% endfor %}</p>
+  <p class="pp-muted">Try playing "rock" over and over against <i>frequency</i>, or a repeating pattern against <i>markov</i>.</p></div>{% endif %}
+{% endblock %}

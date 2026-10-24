@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Guides{% endblock %}
+{% block content %}
+<h1>📘 Guides</h1>
+<p class="lead">Short, practical chapters on writing Python that other people (and future you) can read, test and change.
+  Every project page links back to the guides it practises.</p>
+<div class="grid-cards">
+  {% for g in guides %}
+    <a class="card" href="{{ url_for('site.guide', slug=g.slug) }}"><div class="card-top"><span class="icon">{{ g.icon }}</span><span class="num">Guide {{ g.order }}</span></div><h3>{{ g.title }}</h3><p>{{ g.summary }}</p></a>
+  {% endfor %}
+</div>
+{% endblock %}

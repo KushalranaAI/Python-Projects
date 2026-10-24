@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }}{% endblock %}
+{% block content %}
+<p class="crumbs">{{ LEVEL_INFO[project.level][0] }} {{ LEVEL_INFO[project.level][1] }} · Project {{ project.order }}</p>
+<h1>{{ project.icon }} {{ project.title }}</h1>
+<p class="lead">{{ project.summary }}</p>
+<div class="row">
+  <a class="btn primary" href="/play/{{ project.slug }}/" target="_self">▶ Open the app</a>
+  <button class="btn" data-tab-link="tests">🧪 Run the tests</button>
+  <button class="btn" data-tab-link="code">📄 Read the code</button>
+  <label class="btn ghost"><input type="checkbox" data-complete="{{ project.slug }}"> Mark as complete</label>
+  <span class="pill">⏱ {{ project.time }}</span>
+</div>
+
+<div class="tabs" role="tablist">
+  <button data-tab="overview">Overview</button>
+  <button data-tab="steps">Build it step by step</button>
+  <button data-tab="architecture">Architecture</button>
+  <button data-tab="code">Code</button>
+  <button data-tab="tests">Tests</button>
+  <button data-tab="exercises">Exercises</button>
+</div>
+
+<section class="tab-panel" id="tab-overview">
+  <div class="grid-3">
+    <div class="card"><h4>🐍 Python skills</h4><ul>{% for s in project.python_skills %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    <div class="card"><h4>🧱 OOP concepts</h4><ul>{% for s in project.oop_concepts %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    <div class="card"><h4>✨ Clean-code practices</h4><ul>{% for s in project.clean_code %}<li>{{ s }}</li>{% endfor %}</ul></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h4>✅ Features</h4><ul>{% for s in project.features %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    <div class="card"><h4>▶ Run it yourself</h4>
+      <p>From the repository root:</p>
+      <pre class="cmd"><code># terminal version
+{{ project.cli_command }}
+
+# its own web app on http://127.0.0.1:5001
+{{ project.web_command }}
+
+# its tests
+python -m pytest projects/{{ project.level }}/{{ project.slug }}/tests</code></pre>
+    </div>
+  </div>
+  <article class="prose">{{ project.body | markdown }}</article>
+</section>
+
+<section class="tab-panel" id="tab-steps">
+  <p class="muted">Build it yourself in a new folder, following these steps in order. Each step names the files it touches; click one to read the finished version.</p>
+  <ol class="steps">
+    {% for step in project.steps %}
+      <li>
+        <h3>{{ step.title }}</h3>
+        <div class="prose">{{ step.body | markdown }}</div>
+        {% if step.files %}<div class="pills">{% for f in step.files %}<a class="pill file" href="#code" data-open-file="{{ f }}">📄 {{ f }}</a>{% endfor %}</div>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="tab-panel" id="tab-architecture">
+  <h3>Class diagram</h3>
+  {{ project.architecture | mermaid }}
+  {% if project.flow %}<h3>How a request flows through the code</h3>{{ project.flow | mermaid }}{% endif %}
+  <h3>Layers (the same in every project)</h3>
+  {{ '''flowchart TB
+  subgraph Interfaces["Interfaces: thin, no business rules"]
+    CLI["cli.py<br/>input() / print()"]
+    WEB["web.py<br/>Flask routes + templates"]
+  end
+  subgraph Domain["Domain: the real program"]
+    LOGIC["classes & pure functions<br/>validation · rules · state"]
+  end
+  STORE[("storage<br/>JSON / SQLite")]
+  TESTS["tests/<br/>pytest"]
+  CLI --> LOGIC
+  WEB --> LOGIC
+  LOGIC --> STORE
+  TESTS -.checks.-> LOGIC''' | mermaid }}
+</section>
+
+<section class="tab-panel" id="tab-code">
+  <div class="code-view">
+    <div class="file-list">
+      {% for name, _ in files %}<button data-file="{{ name }}" {% if loop.first %}class="active"{% endif %}>{{ name }}</button>{% endfor %}
+    </div>
+    <div class="file-body">
+      {% for name, code in files %}<div class="file" data-file-body="{{ name }}" {% if not loop.first %}hidden{% endif %}><div class="file-name">projects/{{ project.level }}/{{ project.slug }}/{{ name }}</div>{{ code }}</div>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" id="tab-tests">
+  <p>The tests check the domain logic directly (no browser, no keyboard), which is exactly why the logic lives in its own module.</p>
+  <button class="btn primary" id="run-tests" data-slug="{{ project.slug }}">▶ Run pytest</button>
+  <pre class="terminal" id="test-output">Click the button to run this project's tests.</pre>
+</section>
+
+<section class="tab-panel" id="tab-exercises">
+  <p class="muted">Extend the project. Each exercise practises one more skill; write a test first.</p>
+  <ol class="exercises">{% for e in project.exercises %}<li>{{ e | markdown }}</li>{% endfor %}</ol>
+</section>
+
+<nav class="prevnext">
+  {% if prev %}<a class="card" href="{{ url_for('site.project', slug=prev.slug) }}"><small>← Previous project</small>{{ prev.icon }} {{ prev.title }}</a>{% else %}<span></span>{% endif %}
+  {% if next %}<a class="card right" href="{{ url_for('site.project', slug=next.slug) }}"><small>Next project →</small>{{ next.icon }} {{ next.title }}</a>{% endif %}
+</nav>
+{% endblock %}

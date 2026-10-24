@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ config.get("PROJECT_TITLE", "Project") }}{% endblock %}</title>
+  <style>
+    :root { --bg:#f6f7fb; --panel:#fff; --text:#1d2433; --muted:#667085; --accent:#4f46e5; --border:#e4e7ec; --ok:#12805c; --bad:#c4320a; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#0f1220; --panel:#181c2e; --text:#e6e8f0; --muted:#98a2b3; --accent:#8b8cff; --border:#2a3048; --ok:#4ade80; --bad:#f97066; } }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+  </style>
+  {% include "project_widgets.html" %}
+</head>
+<body>
+  <main>
+    <h1>{{ config.get("PROJECT_TITLE", "") }}</h1>
+    {% block project %}{% endblock %}
+  </main>
+</body>
+</html>

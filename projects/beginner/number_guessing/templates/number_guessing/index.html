@@ -1,0 +1,37 @@
+{% extends "project_base.html" %}
+{% block project %}
+<div class="pp-card">
+  <form method="post" action="{{ url_for('.new_game') }}" class="pp-row">
+    <b>New game:</b>
+    {% for d in difficulties %}
+      <button class="pp-btn {% if not game or game.high != d.high %}ghost{% endif %}" name="difficulty" value="{{ d.name }}">{{ d.name.title() }} · 1-{{ d.high }}</button>
+    {% endfor %}
+  </form>
+</div>
+
+{% include "_flashes.html" %}
+
+{% if game %}
+<div class="pp-card">
+  {% set low, high = game.range_hint %}
+  <div class="pp-grid">
+    <div class="pp-stat"><span class="pp-muted">Attempts left</span><b>{{ game.attempts_left }}</b></div>
+    <div class="pp-stat"><span class="pp-muted">Secret is between</span><b>{{ low }} - {{ high }}</b></div>
+    <div class="pp-stat"><span class="pp-muted">Binary search needs</span><b>≤ {{ optimal }}</b></div>
+  </div>
+  <div class="pp-bar" style="margin:14px 0"><span style="margin-left: {{ (low - 1) / game.high * 100 }}%; width: {{ (high - low + 1) / game.high * 100 }}%"></span></div>
+
+  {% if game.is_over %}
+    <p class="pp-big">{% if game.is_won %}🎉 {{ game.secret }} - solved in {{ game.attempts_used }}!{% else %}😢 It was {{ game.secret }}{% endif %}</p>
+  {% else %}
+    <form method="post" action="{{ url_for('.guess') }}" class="pp-row">
+      <input name="number" type="number" min="1" max="{{ game.high }}" required autofocus placeholder="1-{{ game.high }}">
+      <button class="pp-btn">Guess</button>
+    </form>
+  {% endif %}
+  {% if game.guesses %}<p class="pp-muted">Your guesses: {% for g in game.guesses %}<span class="pp-pill">{{ g }} {{ '↑' if g < game.secret else ('↓' if g > game.secret else '✓') }}</span>{% endfor %}</p>{% endif %}
+</div>
+{% else %}
+<p class="pp-muted">Pick a difficulty to start. I'll think of a number - you find it with as few guesses as possible.</p>
+{% endif %}
+{% endblock %}

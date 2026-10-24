@@ -1,0 +1,55 @@
+{% extends "project_base.html" %}
+{% block project %}
+{% set c = editing %}
+{% macro field(name, label, type="text", value="") %}
+  <label style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px">{{ label }}
+    <input type="{{ type }}" name="{{ name }}" value="{{ form.get(name, value) if form else value }}" {% if name == 'name' %}required{% endif %}>
+    {% if errors.get(name) %}<small style="color:var(--bad)">{{ label }} {{ errors[name] }}</small>{% endif %}
+  </label>
+{% endmacro %}
+<form method="post" action="{{ url_for('.save') }}" class="pp-card">
+  <h3 style="margin-top:0">{{ '✏️ Edit ' ~ c.name if c else '➕ New contact' }}</h3>
+  {% if c %}<input type="hidden" name="id" value="{{ c.id }}">{% endif %}
+  <div class="pp-row">
+    {{ field('name', 'Name', value=c.name if c else '') }}
+    {{ field('email', 'Email', 'email', c.email if c else '') }}
+    {{ field('phone', 'Phone', 'tel', c.phone if c else '') }}
+  </div>
+  <div class="pp-row" style="margin-top:8px">
+    {{ field('company', 'Company', value=c.company if c else '') }}
+    {{ field('birthday', 'Birthday', 'date', c.birthday.isoformat() if c and c.birthday else '') }}
+    {{ field('tags', 'Tags (comma separated)', value=c.tags|join(', ') if c else '') }}
+  </div>
+  <div class="pp-row" style="margin-top:10px">
+    <label><input type="checkbox" name="favorite" {% if c and c.favorite %}checked{% endif %}> ★ Favourite</label>
+    <button class="pp-btn">Save</button>{% if c %}<a class="pp-btn ghost" href="{{ url_for('.index') }}">Cancel</a>{% endif %}
+  </div>
+</form>
+{% include "_flashes.html" %}
+{% if birthdays %}<div class="pp-card">🎂 {% for p, days in birthdays %}<span class="pp-pill">{{ p.name }} - {{ 'today!' if days == 0 else 'in ' ~ days ~ ' days' }}</span>{% endfor %}</div>{% endif %}
+<div class="pp-card">
+  <form class="pp-row" method="get">
+    <input name="q" value="{{ query }}" placeholder="Search name, email, company, tag…" style="flex:1">
+    <button class="pp-btn ghost">Search</button>
+    <a class="pp-btn ghost" href="{{ url_for('.export_csv') }}">⬇ Export CSV</a>
+  </form>
+  <p>{% for t in tags %}<a class="pp-pill" href="?tag={{ t }}" style="{% if t == tag %}color:var(--accent);border-color:var(--accent){% endif %}">#{{ t }}</a>{% endfor %}</p>
+  <table class="pp-table">
+    {% for p in contacts %}
+    <tr>
+      <td style="width:42px"><span style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700">{{ p.initials }}</span></td>
+      <td><b>{{ '★ ' if p.favorite }}{{ p.name }}</b><br><span class="pp-muted">{{ p.company }}</span></td>
+      <td>{% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% endif %}<br>{{ p.phone }}</td>
+      <td>{% for t in p.tags %}<span class="pp-pill">#{{ t }}</span>{% endfor %}</td>
+      <td style="text-align:right;white-space:nowrap"><a class="pp-btn small ghost" href="?edit={{ p.id }}">Edit</a>
+        <form method="post" action="{{ url_for('.delete', contact_id=p.id) }}" style="display:inline" onsubmit="return confirm('Delete {{ p.name }}?')"><button class="pp-btn small danger">Delete</button></form></td>
+    </tr>
+    {% else %}<tr><td class="pp-muted">No contacts{{ ' match your search' if query or tag }}.</td></tr>{% endfor %}
+  </table>
+  <p class="pp-muted">{{ contacts|length }} of {{ total }} shown</p>
+</div>
+<form method="post" action="{{ url_for('.import_csv') }}" enctype="multipart/form-data" class="pp-card pp-row">
+  <b>Import CSV</b> <input type="file" name="file" accept=".csv"> <button class="pp-btn ghost">Import</button>
+  <span class="pp-muted">Columns: name, email, phone, company, birthday, tags (a;b), favorite</span>
+</form>
+{% endblock %}

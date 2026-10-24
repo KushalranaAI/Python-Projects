@@ -1,0 +1,27 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.shorten') }}" class="pp-card">
+  <div class="pp-row">
+    <input name="url" placeholder="Paste a long URL, e.g. docs.python.org/3/library/sqlite3.html" style="flex:1;min-width:260px" required autofocus>
+    <input name="alias" placeholder="custom alias (optional)" size="18">
+    <button class="pp-btn">Shorten</button>
+  </div>
+</form>
+{% include "_flashes.html" %}
+{% if latest %}<div class="pp-flash success">✨ Your short link: <a href="{{ url_for('.go', code=latest) }}" target="_blank"><code>{{ url_for('.go', code=latest, _external=True) }}</code></a>
+  <button class="pp-btn small ghost" onclick="navigator.clipboard.writeText('{{ url_for('.go', code=latest, _external=True) }}');this.textContent='Copied'">Copy</button></div>{% endif %}
+<div class="pp-card">
+  <table class="pp-table">
+    <tr><th>Short</th><th>Destination</th><th>Clicks</th><th></th></tr>
+    {% for link in links %}
+    <tr>
+      <td><a href="{{ url_for('.go', code=link.code) }}" target="_blank"><code>/{{ link.code }}</code></a>{% if link.custom %} <span class="pp-pill">alias</span>{% endif %}</td>
+      <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ link.url }}">{{ link.url }}</td>
+      <td><a href="{{ url_for('.stats', code=link.code) }}">{{ link.clicks }} 📈</a></td>
+      <td><form method="post" action="{{ url_for('.delete', code=link.code) }}"><button class="pp-btn small danger">✕</button></form></td>
+    </tr>
+    {% else %}<tr><td class="pp-muted">No links yet.</td></tr>{% endfor %}
+  </table>
+</div>
+<p class="pp-muted">Codes are the database id written in base 62 (0-9, a-z, A-Z): 3 characters cover 238,328 links, 6 cover 56 billion.</p>
+{% endblock %}

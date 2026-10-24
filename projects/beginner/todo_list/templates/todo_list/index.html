@@ -1,0 +1,38 @@
+{% extends "project_base.html" %}
+{% block project %}
+<div class="pp-grid">
+  <div class="pp-card pp-stat"><span class="pp-muted">Open</span><b>{{ stats.open }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Done</span><b>{{ stats.done }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Overdue</span><b style="color:var(--bad)">{{ stats.overdue }}</b></div>
+</div>
+<form class="pp-card pp-row" method="post" action="{{ url_for('.add') }}">
+  <input name="title" placeholder="What needs doing?" required style="flex:1;min-width:200px">
+  <select name="priority">{% for p in priorities|reverse %}<option value="{{ p.name }}" {% if p.name == 'MEDIUM' %}selected{% endif %}>{{ p.name.title() }}</option>{% endfor %}</select>
+  <input type="date" name="due">
+  <input name="tags" placeholder="tags, comma separated" size="18">
+  <button class="pp-btn">Add</button>
+</form>
+{% include "_flashes.html" %}
+<div class="pp-card">
+  <form class="pp-row" method="get">
+    <input name="q" value="{{ query }}" placeholder="Search…">
+    <label><input type="checkbox" name="hide_done" value="1" {% if not show_done %}checked{% endif %} onchange="this.form.submit()"> hide completed</label>
+    {% if tag %}<input type="hidden" name="tag" value="{{ tag }}">{% endif %}
+    <span class="pp-muted">Tags:</span> <a class="pp-pill" href="{{ url_for('.index') }}">all</a>
+    {% for t in tags %}<a class="pp-pill" style="{% if t == tag %}border-color:var(--accent);color:var(--accent){% endif %}" href="?tag={{ t }}">#{{ t }}</a>{% endfor %}
+  </form>
+  <table class="pp-table" style="margin-top:10px">
+    {% for t in tasks %}
+    <tr>
+      <td style="width:36px"><form method="post" action="{{ url_for('.change', task_id=t.id, action='toggle') }}"><button class="pp-btn small ghost" title="toggle">{{ '✔' if t.done else '○' }}</button></form></td>
+      <td><span class="{{ 'pp-done' if t.done }}">{{ t.title }}</span>
+        {% for tag in t.tags %}<span class="pp-pill">#{{ tag }}</span>{% endfor %}</td>
+      <td><span class="pp-pill">{{ {'HIGH':'🔴','MEDIUM':'🟡','LOW':'🟢'}[t.priority.name] }} {{ t.priority.name.title() }}</span></td>
+      <td>{% if t.due %}<span style="{% if t.is_overdue(today) %}color:var(--bad);font-weight:600{% endif %}">{{ t.due.strftime('%d %b') }}</span>{% endif %}</td>
+      <td style="text-align:right"><form method="post" action="{{ url_for('.change', task_id=t.id, action='delete') }}"><button class="pp-btn small danger">Delete</button></form></td>
+    </tr>
+    {% else %}<tr><td class="pp-muted">No tasks here. Add one above!</td></tr>{% endfor %}
+  </table>
+  {% if stats.done %}<form method="post" action="{{ url_for('.clear') }}" style="margin-top:10px"><button class="pp-btn small ghost">Clear {{ stats.done }} completed</button></form>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "project_base.html" %}
+{% block project %}
+<style>
+  .kb { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)); gap: 12px; overflow-x: auto; }
+  .kb-col { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 10px; min-height: 260px; }
+  .kb-col.over { outline: 2px dashed var(--accent); }
+  .kb-col.full h4 { color: var(--bad); }
+  .kb-col h4 { margin: 2px 4px 10px; display: flex; justify-content: space-between; }
+  .kb-card { background: var(--bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; cursor: grab; }
+  .kb-card.high { border-left-color: var(--bad); } .kb-card.low { border-left-color: var(--ok); }
+  .kb-card.dragging { opacity: .4; }
+  .kb-card button { float: right; border: none; background: none; color: var(--muted); cursor: pointer; }
+  .kb-add { display: flex; gap: 4px; margin-top: 6px; } .kb-add input { flex: 1; min-width: 0; }
+  @media (max-width: 800px) { .kb { grid-template-columns: repeat(4, 220px); } }
+</style>
+<div id="msg"></div>
+<div class="kb" id="board"></div>
+<p class="pp-muted">Drag cards between columns. "In progress" and "Review" have <b>WIP limits</b> - the API answers <code>409 Conflict</code> when a column is full.
+  Every change is a <code>fetch()</code> call to the JSON API; open the browser's network tab to watch them.</p>
+<script>
+(() => {
+  const API = "{{ url_for('.get_board', board_id=board_id) }}".replace(/\/api\/boards\/\d+$/, "/api");
+  const boardEl = document.getElementById("board"), msg = document.getElementById("msg");
+  let dragged = null;
+
+  async function call(method, url, data) {
+    const res = await fetch(API + url, { method, headers: { "Content-Type": "application/json" }, body: data ? JSON.stringify(data) : undefined });
+    if (!res.ok) { const err = await res.json().catch(() => ({ error: res.statusText })); throw new Error(`${res.status}: ${err.error}`); }
+    return res.status === 204 ? null : res.json();
+  }
+  const flash = (text, kind = "error") => { msg.innerHTML = ""; if (!text) return; const d = document.createElement("div"); d.className = `pp-flash ${kind}`; d.textContent = text; msg.append(d); };
+
+  async function render() {
+    const board = await call("GET", "/boards/{{ board_id }}");
+    boardEl.innerHTML = "";
+    for (const col of board.columns) {
+      const full = col.wip_limit !== null && col.cards.length >= col.wip_limit;
+      const colEl = document.createElement("div");
+      colEl.className = "kb-col" + (full ? " full" : "");
+      colEl.innerHTML = `<h4><span></span><span class="pp-muted">${col.cards.length}${col.wip_limit !== null ? " / " + col.wip_limit : ""}</span></h4>`;
+      colEl.querySelector("h4 span").textContent = col.name;
+      for (const card of col.cards) {
+        const c = document.createElement("div");
+        c.className = `kb-card ${card.priority}`; c.draggable = true; c.dataset.id = card.id;
+        c.innerHTML = `<button title="delete">✕</button><div></div><div class="pp-muted" style="font-size:.8rem"></div>`;
+        c.children[1].textContent = card.title;                                   // textContent: user text is never parsed as HTML
+        c.children[2].textContent = card.tags.map((t) => "#" + t).join(" ");
+        c.querySelector("button").onclick = async () => { await call("DELETE", `/cards/${card.id}`); render(); };
+        c.addEventListener("dragstart", () => { dragged = card.id; c.classList.add("dragging"); });
+        c.addEventListener("dragend", () => c.classList.remove("dragging"));
+        colEl.append(c);
+      }
+      colEl.addEventListener("dragover", (e) => { e.preventDefault(); colEl.classList.add("over"); });
+      colEl.addEventListener("dragleave", () => colEl.classList.remove("over"));
+      colEl.addEventListener("drop", async (e) => {
+        e.preventDefault(); colEl.classList.remove("over");
+        const cards = [...colEl.querySelectorAll(".kb-card")];
+        const position = cards.filter((x) => x.getBoundingClientRect().top + x.offsetHeight / 2 < e.clientY && +x.dataset.id !== dragged).length;
+        try { await call("PATCH", `/cards/${dragged}`, { column_id: col.id, position }); flash(""); } catch (err) { flash(err.message); }
+        render();
+      });
+      const form = document.createElement("form");
+      form.className = "kb-add";
+      form.innerHTML = `<input placeholder="New card…" required><select><option>normal</option><option>high</option><option>low</option></select><button class="pp-btn small">+</button>`;
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const [input, select] = form.elements;
+        try { await call("POST", `/columns/${col.id}/cards`, { title: input.value, priority: select.value }); flash(""); } catch (err) { flash(err.message); }
+        render();
+      };
+      colEl.append(form);
+      boardEl.append(colEl);
+    }
+  }
+  render().catch((e) => flash(e.message));
+})();
+</script>
+{% endblock %}

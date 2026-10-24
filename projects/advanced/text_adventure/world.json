@@ -1,0 +1,28 @@
+{
+  "title": "The Lost Library",
+  "intro": "You wake on a cold stone floor. Somewhere in this abandoned library is the legendary Python Codex. Type 'help' if you're lost.",
+  "start": "hall",
+  "goal": {"item": "codex", "room": "hall", "message": "You carry the Python Codex into the moonlight. Its pages glow with perfectly tested code. You win!"},
+  "rooms": {
+    "hall": {"name": "Great Hall", "description": "Dust swirls in the moonlight. Tall doors lead north, and an archway opens to the east.",
+             "exits": {"north": "reading_room", "east": "corridor"}, "items": ["lamp"]},
+    "corridor": {"name": "Narrow Corridor", "description": "Portraits of forgotten programmers line the walls. A staircase descends into darkness.",
+                 "exits": {"west": "hall", "down": "archive", "north": "office"}, "items": ["note"]},
+    "office": {"name": "Librarian's Office", "description": "A desk covered in coffee rings. One drawer is slightly open.",
+               "exits": {"south": "corridor"}, "items": ["key"]},
+    "reading_room": {"name": "Reading Room", "description": "Rows of empty desks. A heavy iron door blocks the way north.",
+                     "exits": {"south": "hall", "north": "vault"}, "locked": {"north": "key"}, "items": ["book"]},
+    "archive": {"name": "Archive", "description": "Shelves vanish into the shadows. Something glints under a table.",
+                "exits": {"up": "corridor"}, "dark": true, "items": ["gear"]},
+    "vault": {"name": "The Vault", "description": "A single pedestal stands in a circle of light.",
+              "exits": {"south": "reading_room"}, "items": ["codex"], "requires": {"item": "gear", "message": "The pedestal has an empty slot shaped like a gear. The Codex is sealed inside a glass case."}}
+  },
+  "items": {
+    "lamp": {"name": "brass lamp", "description": "An old brass lamp. It still has oil.", "portable": true},
+    "note": {"name": "crumpled note", "description": "It reads: 'The key to the vault is where the coffee is.'", "portable": true},
+    "key": {"name": "iron key", "description": "A heavy iron key with a snake engraved on it.", "portable": true},
+    "book": {"name": "dusty book", "description": "'Clean Code' - someone left a bookmark at the chapter on functions.", "portable": true},
+    "gear": {"name": "bronze gear", "description": "A small bronze gear with 64 teeth.", "portable": true},
+    "codex": {"name": "Python Codex", "description": "The legendary Python Codex.", "portable": true}
+  }
+}

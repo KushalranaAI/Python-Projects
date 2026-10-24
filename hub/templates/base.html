@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Python Projects{% endblock %} · Learn Python by building</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('site.pygments_stylesheet') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{{ url_for('site.home') }}">🐍 Python Projects<small>Learn clean Python &amp; OOP by building 20 apps</small></a>
+    <nav class="topnav">
+      <a href="{{ url_for('site.home') }}">Home</a>
+      <a href="{{ url_for('site.guides') }}">Guides</a>
+    </nav>
+    {% for level, items in catalog.by_level().items() %}
+      <details class="nav-level" {% if not current_project or current_project.level == level %}open{% endif %}>
+        <summary>{{ LEVEL_INFO[level][0] }} {{ LEVEL_INFO[level][1] }} <span class="count" data-level-count="{{ level }}">{{ items|length }}</span></summary>
+        <ul>
+          {% for p in items %}
+            <li><a href="{{ url_for('site.project', slug=p.slug) }}" class="{% if current_project and current_project.slug == p.slug %}active{% endif %}">
+              <span class="done-dot" data-done="{{ p.slug }}"></span>{{ p.icon }} {{ p.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endfor %}
+    <p class="sidebar-foot">Runs locally · <code>python start.py</code></p>
+  </aside>
+  <main class="main">
+    <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰ Menu</button>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{{ url_for('static', filename='vendor/mermaid.min.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

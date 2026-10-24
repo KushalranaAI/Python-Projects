@@ -1,0 +1,42 @@
+{% extends "project_base.html" %}
+{% block project %}
+{% set done, total = progress %}
+<div class="pp-card">
+  <b>Today: {{ done }} / {{ total }} daily habits</b>
+  <div class="pp-bar" style="margin-top:8px"><span style="width:{{ (100 * done / total) if total else 0 }}%"></span></div>
+</div>
+<form method="post" action="{{ url_for('.add') }}" class="pp-card pp-row">
+  <input name="icon" value="💧" size="2" title="emoji">
+  <input name="name" placeholder="New habit, e.g. Drink 2 l of water" required style="flex:1;min-width:200px">
+  <select name="frequency" onchange="this.form.elements.per_week.hidden = this.value !== 'weekly'"><option value="daily">Every day</option><option value="weekly">Weekly target</option></select>
+  <input name="per_week" type="number" min="1" max="7" value="3" hidden style="width:60px" title="days per week">
+  <button class="pp-btn">Add habit</button>
+</form>
+{% include "_flashes.html" %}
+{% for h in habits %}
+<div class="pp-card">
+  <div class="pp-row" style="justify-content:space-between">
+    <b style="font-size:1.1rem">{{ h.icon }} {{ h.name }}</b>
+    <span>
+      <span class="pp-pill">🔥 {{ h.current_streak(today) }} {{ 'day' if h.frequency == Frequency.DAILY else 'week' }}{{ '' if h.current_streak(today) == 1 else 's' }}</span>
+      <span class="pp-pill">🏆 best {{ h.longest_streak() }}</span>
+      <span class="pp-pill">{{ '%.0f'|format(h.completion_rate(today) * 100) }}% last 30 days</span>
+      {% if h.frequency == Frequency.WEEKLY %}<span class="pp-pill">{{ h.target }}×/week</span>{% endif %}
+      <form method="post" action="{{ url_for('.delete', habit_id=h.id) }}" style="display:inline" onsubmit="return confirm('Delete {{ h.name }}?')"><button class="pp-btn small danger">✕</button></form>
+    </span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px">
+    {% for day in week %}
+      <form method="post" action="{{ url_for('.toggle', habit_id=h.id, day=day.isoformat()) }}">
+        <button class="pp-btn {{ '' if h.done_on(day) else 'ghost' }}" style="width:100%;padding:6px 0" title="{{ day.isoformat() }}">
+          <small>{{ day.strftime('%a') }}</small><br>{{ '✔' if h.done_on(day) else day.day }}</button></form>
+    {% endfor %}
+  </div>
+  <div style="display:flex;gap:3px;margin-top:12px" title="last 12 weeks">
+    {% for wk in heat_weeks %}<div style="display:flex;flex-direction:column;gap:3px">
+      {% for d in wk %}<span title="{{ d.isoformat() }}" style="width:12px;height:12px;border-radius:3px;background:{{ 'var(--accent)' if h.done_on(d) else ('var(--border)' if d <= today else 'transparent') }}"></span>{% endfor %}
+    </div>{% endfor %}
+  </div>
+</div>
+{% else %}<p class="pp-muted">No habits yet. Start with one small daily habit.</p>{% endfor %}
+{% endblock %}

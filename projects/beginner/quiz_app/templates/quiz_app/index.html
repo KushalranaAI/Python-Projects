@@ -1,0 +1,41 @@
+{% extends "project_base.html" %}
+{% block project %}
+{% if not quiz %}
+  <form method="post" action="{{ url_for('.start') }}" class="pp-card">
+    <h3 style="margin-top:0">🧠 Test your Python - {{ bank|length }} questions</h3>
+    <div class="pp-row">
+      <select name="category"><option value="">All categories</option>{% for c in bank.categories %}<option>{{ c }}</option>{% endfor %}</select>
+      <select name="count">{% for n in [5, 10, 20] %}<option {% if n == 10 %}selected{% endif %}>{{ n }}</option>{% endfor %}</select> questions
+      <button class="pp-btn">Start</button>
+    </div>
+  </form>
+{% else %}
+  <div class="pp-bar" style="margin-bottom:10px"><span style="width:{{ 100 * quiz.position / quiz.total }}%"></span></div>
+  {% if last %}
+    <div class="pp-flash {{ 'success' if last.correct else 'error' }}">
+      {{ '✅ Correct!' if last.correct else '❌ Not quite. The answer is ' ~ letters[last.question.answer] ~ ') ' ~ last.question.correct_option }}
+      <div class="pp-muted" style="margin-top:4px">{{ last.question.explanation }}</div>
+    </div>
+  {% endif %}
+  {% if not quiz.finished %}
+    {% set q = quiz.current %}
+    <form method="post" action="{{ url_for('.answer') }}" class="pp-card">
+      <p class="pp-muted">Question {{ quiz.position + 1 }} of {{ quiz.total }} · {{ q.category }} · score {{ quiz.score }}</p>
+      <h3>{{ q.prompt | replace('`', '') }}</h3>
+      {% for option in q.options %}
+        <button class="pp-btn ghost" name="choice" value="{{ loop.index0 }}" style="display:block;width:100%;text-align:left;margin:8px 0">{{ letters[loop.index0] }}) {{ option }}</button>
+      {% endfor %}
+    </form>
+  {% else %}
+    <div class="pp-card" style="text-align:center">
+      <p class="pp-big">{{ quiz.score }} / {{ quiz.total }}</p>
+      <p>{{ quiz.percent }}% - {{ 'Excellent! 🏆' if quiz.percent >= 90 else ('Good work 👍' if quiz.percent >= 60 else 'Keep practising 💪') }}</p>
+      <table class="pp-table">{% for cat, (right, total) in quiz.score_by_category().items() %}<tr><td>{{ cat }}</td><td>{{ right }}/{{ total }}</td></tr>{% endfor %}</table>
+    </div>
+    <div class="pp-card"><h3 style="margin-top:0">Review</h3>
+      {% for r in quiz.results %}<p>{{ '✅' if r.correct else '❌' }} {{ r.question.prompt | replace('`', '') }}<br><span class="pp-muted">{{ r.question.correct_option }}: {{ r.question.explanation }}</span></p>{% endfor %}
+    </div>
+  {% endif %}
+  <form method="post" action="{{ url_for('.reset') }}"><button class="pp-btn small ghost">↺ New quiz</button></form>
+{% endif %}
+{% endblock %}
