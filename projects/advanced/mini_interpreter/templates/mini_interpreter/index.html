@@ -1,0 +1,33 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.run') }}" class="pp-card">
+  <div class="pp-row"><span class="pp-mono">&gt;&gt;&gt;</span>
+    <input name="source" id="src" placeholder="e.g. def f(x) = x^2 + 1" style="flex:1;font-family:ui-monospace,monospace" autofocus autocomplete="off">
+    <button class="pp-btn">Run</button></div>
+  <p class="pp-muted" style="margin-bottom:0">Examples:
+    {% for ex in examples %}<a href="#" class="pp-pill pp-mono" style="white-space:normal" onclick="document.getElementById('src').value=this.textContent;return false">{{ ex }}</a>{% endfor %}</p>
+</form>
+<div class="pp-row"><span class="pp-muted">Variables:</span>{% for k, v in variables.items() %}<span class="pp-pill pp-mono">{{ k }} = {{ '%.6g'|format(v) }}</span>{% endfor %}
+  <span class="pp-muted">Functions:</span>{% for k, src in functions.items() %}<span class="pp-pill pp-mono">{{ src }}</span>{% endfor %}
+  <form method="post" action="{{ url_for('.clear') }}"><button class="pp-btn small ghost">Reset</button></form></div>
+{% for e in entries %}
+<div class="pp-card">
+  <div class="pp-mono">&gt;&gt;&gt; {{ e.source }}</div>
+  {% if not e.ok %}
+    {% if e.column is not none %}<div class="pp-mono" style="color:var(--bad)">{{ ' ' * (e.column + 4) }}^</div>{% endif %}
+    <div class="pp-flash error">{{ e.error }}</div>
+  {% else %}
+    <p class="pp-big" style="margin:.3em 0">= {{ e.result }}</p>
+    <details {% if loop.first %}open{% endif %}><summary>How the interpreter saw it</summary>
+      <p><b>1. Tokens</b><br>{% for kind, text in e.tokens %}<span class="pp-pill pp-mono" title="{{ kind }}">{{ text }} <small class="pp-muted">{{ kind }}</small></span>{% endfor %}</p>
+      <p><b>2. Tree</b> (fully parenthesised: <code>{{ e.parenthesised }}</code>)</p>
+      <div style="display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:12px;align-items:start">
+        <pre class="pp-mono" style="margin:0">{{ e.tree }}</pre>
+        <pre class="mermaid">{{ e.mermaid }}</pre>
+      </div>
+      <p><b>3. Evaluate</b> - walk the tree bottom-up, combining children with each operator.</p>
+    </details>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

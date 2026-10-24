@@ -1,0 +1,46 @@
+{% extends "project_base.html" %}
+{% macro money(c) %}<span style="color:{{ 'var(--bad)' if c < 0 else 'inherit' }}">${{ '{:,.2f}'.format(c / 100) }}</span>{% endmacro %}
+{% block project %}
+{% include "_flashes.html" %}
+<div class="pp-grid">
+  <div class="pp-card pp-stat"><span class="pp-muted">Accounts</span><b>{{ bank.accounts|length }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Total deposits</span><b>{{ money(bank.total_deposits) }}</b></div>
+</div>
+<div class="pp-card">
+  <table class="pp-table">
+    <tr><th>Account</th><th>Owner</th><th>Type</th><th style="text-align:right">Balance</th><th></th></tr>
+    {% for a in bank.accounts %}<tr>
+      <td><code>{{ a.number }}</code></td><td>{{ a.owner }}</td>
+      <td>{{ a.kind }}{% if a.kind == 'checking' and a.overdraft_limit %} <span class="pp-pill">overdraft ${{ '%.0f'|format(a.overdraft_limit / 100) }}</span>{% elif a.kind == 'savings' %} <span class="pp-pill">{{ '%.1f'|format(a.annual_rate * 100) }}% p.a.</span>{% endif %}</td>
+      <td style="text-align:right"><b>{{ money(a.balance) }}</b></td><td><a class="pp-btn small ghost" href="?account={{ a.number }}">Statement</a></td></tr>
+    {% else %}<tr><td class="pp-muted">No accounts yet - open one below.</td></tr>{% endfor %}
+  </table>
+</div>
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+  <form method="post" action="{{ url_for('.do') }}" class="pp-card"><b>Open an account</b>
+    <input type="hidden" name="action" value="open">
+    <p><input name="owner" placeholder="Owner name" required></p>
+    <p><select name="type"><option value="checking">Checking ($5 fee under $1,000)</option><option value="savings">Savings (4% p.a., 3 withdrawals/month)</option></select></p>
+    <p><input name="overdraft" placeholder="Overdraft $ (checking)" size="16"></p>
+    <button class="pp-btn">Open</button></form>
+  <form method="post" action="{{ url_for('.do') }}" class="pp-card"><b>Deposit / withdraw</b>
+    <p><select name="number">{% for a in bank.accounts %}<option value="{{ a.number }}">{{ a.number }} · {{ a.owner }}</option>{% endfor %}</select></p>
+    <p><input name="amount" placeholder="Amount $" required size="10"> <input name="memo" placeholder="Memo" size="12"></p>
+    <button class="pp-btn" name="action" value="deposit">Deposit</button> <button class="pp-btn ghost" name="action" value="withdraw">Withdraw</button></form>
+  <form method="post" action="{{ url_for('.do') }}" class="pp-card"><b>Transfer</b>
+    <input type="hidden" name="action" value="transfer">
+    <p>From <select name="source">{% for a in bank.accounts %}<option value="{{ a.number }}">{{ a.number }} · {{ a.owner }}</option>{% endfor %}</select></p>
+    <p>To <select name="target">{% for a in bank.accounts %}<option value="{{ a.number }}" {% if loop.index == 2 %}selected{% endif %}>{{ a.number }} · {{ a.owner }}</option>{% endfor %}</select></p>
+    <p><input name="amount" placeholder="Amount $" required size="10"></p>
+    <button class="pp-btn">Transfer</button></form>
+</div>
+<form method="post" action="{{ url_for('.do') }}" class="pp-card pp-row"><input type="hidden" name="action" value="month_end">
+  <button class="pp-btn ghost">🗓️ Run month-end</button><span class="pp-muted">Each account type does its own thing: savings earn interest, checking pays a fee unless the balance is ≥ $1,000.</span></form>
+{% if account %}
+<div class="pp-card"><b>Statement - {{ account.number }} ({{ account.owner }})</b>
+  <table class="pp-table">{% for t in account.statement()|reverse %}
+    <tr><td>{{ t.at.strftime('%d %b %H:%M') }}</td><td>{{ t.kind.value }}</td><td class="pp-muted">{{ t.memo }}</td>
+      <td style="text-align:right">{{ money(t.amount) }}</td><td style="text-align:right">{{ money(t.balance_after) }}</td></tr>
+  {% else %}<tr><td class="pp-muted">No transactions yet.</td></tr>{% endfor %}</table></div>
+{% endif %}
+{% endblock %}

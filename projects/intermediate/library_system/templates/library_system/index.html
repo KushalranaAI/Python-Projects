@@ -1,0 +1,52 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.time_machine') }}" class="pp-card pp-row">
+  ⏱️ <b>Time machine:</b> today is <b>{{ today.strftime('%a %d %b %Y') }}</b>
+  <input type="number" name="days" min="0" max="365" value="{{ days_ahead }}" style="width:80px"> days ahead
+  <button class="pp-btn small ghost">Travel</button>
+  <span class="pp-muted">Jump forward to see overdue loans and fines (books 14 days / 25¢, DVDs 7 days / $1, magazines 7 days / 10¢).</span>
+</form>
+{% include "_flashes.html" %}
+<div class="pp-card">
+  <form class="pp-row" method="get">
+    <input name="q" value="{{ query }}" placeholder="Search title, author, director…" style="flex:1">
+    <select name="kind" onchange="this.form.submit()"><option value="">All types</option>{% for k in kinds %}<option {% if k == kind %}selected{% endif %}>{{ k }}</option>{% endfor %}</select>
+    <button class="pp-btn ghost">Search</button>
+  </form>
+  <table class="pp-table" style="margin-top:8px">
+    {% for item in items %}
+      {% set loan = lib.open_loan(item.id) %}
+      <tr>
+        <td><b>{{ item.icon }} {{ item.title }}</b> <span class="pp-muted">({{ item.year }})</span><br><span class="pp-muted">{{ item.creator() }} · {{ item.kind }} · {{ item.loan_days }}-day loan</span></td>
+        <td>{% if not item.can_borrow %}<span class="pp-pill">reference only</span>
+            {% elif loan %}<span class="pp-pill" style="color:{{ 'var(--bad)' if loan.days_overdue(today) else 'inherit' }}">{{ lib.member(loan.member_id).name }} · due {{ loan.due_on.strftime('%d %b') }}</span>
+            {% else %}<span class="pp-pill" style="color:var(--ok)">available</span>{% endif %}
+            {% if lib.next_in_line(item.id) %}<br><span class="pp-muted">on hold for {{ lib.member(lib.next_in_line(item.id)).name }}</span>{% endif %}</td>
+        <td style="text-align:right;white-space:nowrap">
+          {% if item.can_borrow %}
+          <form method="post" action="{{ url_for('.action') }}" class="pp-row" style="justify-content:flex-end">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            {% if loan %}<button class="pp-btn small" name="verb" value="return">Return</button>{% endif %}
+            <select name="member_id">{% for m in lib.members.values() %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select>
+            {% if not loan %}<button class="pp-btn small" name="verb" value="checkout">Lend</button>{% endif %}
+            <button class="pp-btn small ghost" name="verb" value="hold">Hold</button>
+          </form>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="pp-card"><b>Members</b>
+    <table class="pp-table">{% for m in lib.members.values() %}<tr>
+      <td>{{ m.name }}</td><td>{{ lib.loans_of(m.id)|length }}/{{ m.max_loans }} items</td>
+      <td>{% if m.fines_cents %}<span style="color:var(--bad)">owes ${{ '%.2f'|format(m.fines_cents / 100) }}</span>
+        <form method="post" action="{{ url_for('.action') }}" style="display:inline"><input type="hidden" name="member_id" value="{{ m.id }}"><button class="pp-btn small ghost" name="verb" value="pay">Pay</button></form>{% endif %}</td></tr>{% endfor %}</table>
+  </div>
+  <div class="pp-card"><b>Overdue</b>
+    {% for loan, fine in overdue %}<p>{{ lib.item(loan.item_id).icon }} {{ lib.item(loan.item_id).title }} - {{ lib.member(loan.member_id).name }}<br>
+      <span class="pp-muted">{{ loan.days_overdue(today) }} days late · fine so far ${{ '%.2f'|format(fine / 100) }}</span></p>
+    {% else %}<p class="pp-muted">Nothing overdue. Lend something, then use the time machine!</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.add') }}" class="pp-card pp-row">
+  <input name="amount" placeholder="Amount" inputmode="decimal" size="8" required>
+  <select name="category">{% for c in categories %}<option value="{{ c.name }}">{{ c.icon }} {{ c.label }}</option>{% endfor %}</select>
+  <input name="description" placeholder="Description" required style="flex:1;min-width:160px">
+  <input type="date" name="spent_on" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}">
+  <button class="pp-btn">Add expense</button>
+</form>
+{% include "_flashes.html" %}
+<form method="get" class="pp-row"><b>Month</b><select name="month" onchange="this.form.submit()">{% for m in months %}<option {% if m == month %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></form>
+
+<div class="pp-grid">
+  <div class="pp-card pp-stat"><span class="pp-muted">Spent in {{ month }}</span><b>{{ money(report.total) }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">Per day</span><b>{{ money(report.daily_average) }}</b></div>
+  <div class="pp-card pp-stat"><span class="pp-muted">vs previous month</span>
+    <b>{% if report.change_vs_previous is none %}-{% else %}<span style="color:{{ 'var(--bad)' if report.change_vs_previous > 0 else 'var(--ok)' }}">{{ '%+.0f'|format(report.change_vs_previous * 100) }}%</span>{% endif %}</b></div>
+</div>
+
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="pp-card"><b>By category</b>
+    {% for cat, cents in report.by_category %}
+      <div style="display:grid;grid-template-columns:150px 1fr 90px;gap:8px;align-items:center;margin:6px 0">
+        <span>{{ cat.icon }} {{ cat.label }}</span><div class="pp-bar"><span style="width:{{ 100 * cents / report.total }}%"></span></div><span style="text-align:right">{{ money(cents) }}</span></div>
+    {% else %}<p class="pp-muted">No expenses this month yet.</p>{% endfor %}
+  </div>
+  <div class="pp-card"><b>Budgets</b>
+    {% for s in report.budgets %}
+      {% set color = {'ok': 'var(--ok)', 'warning': '#f59f00', 'over': 'var(--bad)'}[s.level] %}
+      <div style="margin:8px 0">{{ s.category.icon }} {{ s.category.label }} <span class="pp-muted" style="float:right">{{ money(s.spent) }} / {{ money(s.limit) }}</span>
+        <div class="pp-bar"><span style="width:{{ [s.ratio * 100, 100]|min }}%;background:{{ color }}"></span></div></div>
+    {% else %}<p class="pp-muted">No budgets yet - set some below.</p>{% endfor %}
+  </div>
+</div>
+
+{% if history %}<div class="pp-card"><b>Last 12 months</b>
+  {% set peak = history|map(attribute=1)|max %}
+  <div style="display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:10px">
+    {% for m, cents in history %}<a href="?month={{ m }}" style="flex:1;text-align:center;font-size:.72rem;color:inherit;text-decoration:none" title="{{ money(cents) }}">
+      <div style="background:{{ 'var(--accent)' if m == month else 'var(--border)' }};height:{{ 100 * cents / peak }}px;border-radius:4px 4px 0 0"></div>{{ m[2:] }}</a>{% endfor %}
+  </div></div>{% endif %}
+
+<div class="pp-card"><b>Expenses</b>
+  <table class="pp-table">{% for e in expenses %}
+    <tr><td>{{ e.spent_on.strftime('%d %b') }}</td><td>{{ e.category.icon }} {{ e.description }}</td><td style="text-align:right">{{ money(e.amount_cents) }}</td>
+      <td style="text-align:right"><form method="post" action="{{ url_for('.delete', expense_id=e.id) }}"><button class="pp-btn small danger">✕</button></form></td></tr>
+  {% else %}<tr><td class="pp-muted">Nothing recorded for {{ month }}.</td></tr>{% endfor %}</table>
+</div>
+
+<details class="pp-card"><summary><b>Set monthly budgets</b></summary>
+  <form method="post" action="{{ url_for('.budgets') }}" class="pp-grid" style="margin-top:10px">
+    {% for c in categories %}<label>{{ c.icon }} {{ c.label }}<br><input name="{{ c.name }}" size="8" placeholder="none"
+      value="{{ '%.2f'|format(budgets[c].monthly_limit_cents / 100) if c in budgets else '' }}"></label>{% endfor %}
+    <div><button class="pp-btn">Save budgets</button></div>
+  </form>
+</details>
+{% endblock %}

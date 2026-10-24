@@ -1,0 +1,13 @@
+{# Overrides projects/ui_kit/templates/project_base.html when a project runs inside the hub. #}
+{% extends "base.html" %}
+{% block title %}{{ current_project.title if current_project else "Project" }}{% endblock %}
+{% block head %}{% include "project_widgets.html" %}{% endblock %}
+{% block content %}
+{% if current_project %}
+<div class="play-bar">
+  <span>▶ Live app: <b>{{ current_project.icon }} {{ current_project.title }}</b></span>
+  <span><a href="{{ url_for('site.project', slug=current_project.slug) }}#steps">Build guide</a> · <a href="{{ url_for('site.project', slug=current_project.slug) }}#code">Code</a></span>
+</div>
+{% endif %}
+<div class="play-area">{% block project %}{% endblock %}</div>
+{% endblock %}

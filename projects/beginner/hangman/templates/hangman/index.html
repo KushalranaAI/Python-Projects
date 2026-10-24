@@ -1,0 +1,41 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" action="{{ url_for('.new') }}" class="pp-card pp-row">
+  <b>New game:</b>
+  <button class="pp-btn ghost" name="category" value="">🎲 Random</button>
+  {% for c in categories %}<button class="pp-btn ghost" name="category" value="{{ c }}">{{ c }}</button>{% endfor %}
+</form>
+{% include "_flashes.html" %}
+{% if game %}
+{% set m = game.mistakes %}
+<div class="pp-card" style="display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:center">
+  <svg viewBox="0 0 200 220" width="200" height="220" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M20 210 H120 M50 210 V20 H140 V45"/>
+    {% if m >= 1 %}<circle cx="140" cy="62" r="17"/>{% endif %}
+    {% if m >= 2 %}<path d="M140 79 V135"/>{% endif %}
+    {% if m >= 3 %}<path d="M140 95 L115 120"/>{% endif %}
+    {% if m >= 4 %}<path d="M140 95 L165 120"/>{% endif %}
+    {% if m >= 5 %}<path d="M140 135 L118 175"/>{% endif %}
+    {% if m >= 6 %}<path d="M140 135 L162 175"/>{% endif %}
+  </svg>
+  <div>
+    <p class="pp-muted">Category: <b>{{ game.category }}</b> · lives left: <b>{{ game.lives_left }}</b></p>
+    <p class="pp-big pp-mono" style="letter-spacing:.15em">{{ game.masked if not game.is_lost else game.word|upper }}</p>
+    {% if game.is_won %}<p class="pp-big">🎉 You won!</p>{% elif game.is_lost %}<p class="pp-big">💀 Out of lives</p>{% endif %}
+  </div>
+</div>
+{% if not game.is_over %}
+<form method="post" action="{{ url_for('.guess') }}" class="pp-card">
+  <div style="display:grid;grid-template-columns:repeat(13, 1fr);gap:6px">
+    {% for ch in alphabet %}
+      {% set used = ch in game.guessed %}
+      <button class="pp-btn {{ 'ghost' if used }}" name="letter" value="{{ ch }}" {% if used %}disabled style="opacity:.35;{% if ch in game.misses %}text-decoration:line-through{% endif %}"{% endif %}>{{ ch|upper }}</button>
+    {% endfor %}
+  </div>
+</form>
+<form method="post" action="{{ url_for('.guess') }}" class="pp-card pp-row">
+  <input name="word" placeholder="Know the word? (a wrong guess costs a life)" style="flex:1"><button class="pp-btn ghost">Guess word</button>
+</form>
+{% endif %}
+{% else %}<p class="pp-muted">Choose a category to start.</p>{% endif %}
+{% endblock %}

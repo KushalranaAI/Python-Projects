@@ -1,0 +1,27 @@
+{# Component styles shared by every project UI (cards, forms, buttons, tables, flash messages). #}
+<style>
+  .pp-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin: 14px 0; }
+  .pp-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .pp-card input, .pp-card select, .pp-card textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; }
+  .pp-card textarea { width: 100%; box-sizing: border-box; min-height: 120px; }
+  .pp-btn { font: inherit; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 9px; padding: 8px 14px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .pp-btn.ghost { background: transparent; color: var(--accent); }
+  .pp-btn.small { padding: 4px 9px; font-size: .85rem; }
+  .pp-btn.danger { background: transparent; color: var(--bad); border-color: var(--bad); }
+  .pp-btn:hover { filter: brightness(1.08); }
+  .pp-table { width: 100%; border-collapse: collapse; }
+  .pp-table th, .pp-table td { border-bottom: 1px solid var(--border); padding: 8px 6px; text-align: left; vertical-align: middle; }
+  .pp-muted { color: var(--muted); }
+  .pp-big { font-size: 2.2rem; font-weight: 700; letter-spacing: .02em; }
+  .pp-flash { border-radius: 10px; padding: 10px 14px; margin: 10px 0; border: 1px solid var(--border); background: var(--panel); }
+  .pp-flash.error { border-color: var(--bad); color: var(--bad); }
+  .pp-flash.success { border-color: var(--ok); color: var(--ok); }
+  .pp-pill { display: inline-block; border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: .8rem; margin: 2px; }
+  .pp-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre; }
+  .pp-stat { text-align: center; }
+  .pp-stat b { display: block; font-size: 1.6rem; }
+  .pp-bar { height: 10px; border-radius: 6px; background: var(--border); overflow: hidden; }
+  .pp-bar > span { display: block; height: 100%; background: var(--accent); }
+  .pp-done { text-decoration: line-through; color: var(--muted); }
+</style>

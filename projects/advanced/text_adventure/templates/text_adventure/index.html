@@ -1,0 +1,26 @@
+{% extends "project_base.html" %}
+{% block project %}
+<div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(220px,1fr);gap:14px;align-items:start">
+  <div>
+    <div class="pp-card" style="background:#0b1020;color:#d1e0ff;font-family:ui-monospace,monospace;max-height:520px;overflow-y:auto" id="log">
+      <b style="color:#8b8cff">📜 {{ title }}</b>
+      {% for who, text in log %}
+        <div style="white-space:pre-wrap;margin:8px 0;{% if who == 'player' %}color:#facc15{% elif who == 'system' %}color:#94a3b8{% endif %}">{{ '> ' if who == 'player' }}{{ text }}</div>
+      {% endfor %}
+      <span id="bottom"></span>
+    </div>
+    <form method="post" class="pp-row">
+      <input name="command" placeholder="{{ 'You won! Restart to play again' if game.state.won else 'look · north · take lamp · use key · help' }}" style="flex:1;font-family:ui-monospace,monospace" autofocus autocomplete="off">
+      <button class="pp-btn">Enter</button>
+    </form>
+  </div>
+  <div>
+    <div class="pp-card"><b>Status</b>
+      <p>📍 {{ game.room.name if not game.is_dark else '???' }}<br>🎒 {{ game.state.inventory|map('replace', '_', ' ')|join(', ') or 'empty' }}<br>👣 {{ game.state.moves }} moves</p>
+      <form method="post" action="{{ url_for('.restart') }}"><button class="pp-btn small ghost">↺ Restart</button></form>
+    </div>
+    <div class="pp-card"><b>Map of visited rooms</b><pre class="mermaid">{{ map }}</pre></div>
+  </div>
+</div>
+<script>document.getElementById('log').scrollTop = 1e9;</script>
+{% endblock %}

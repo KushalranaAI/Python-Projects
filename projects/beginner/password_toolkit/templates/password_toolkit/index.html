@@ -1,0 +1,35 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" class="pp-card">
+  <h3 style="margin-top:0">🔐 Generate passwords</h3>
+  <div class="pp-row">
+    <label>Length <input type="number" name="length" min="4" max="128" value="{{ policy.length }}" style="width:80px"></label>
+    {% for name, label in [('lowercase','a-z'),('uppercase','A-Z'),('digits','0-9'),('symbols','!@#'),('exclude_ambiguous','no l/1/O/0')] %}
+      <label><input type="checkbox" name="{{ name }}" {% if policy[name] %}checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+    <button class="pp-btn">Generate</button>
+  </div>
+  {% if error %}<div class="pp-flash error">{{ error }}</div>{% else %}
+  <p class="pp-muted">Pool of {{ policy.pool_size }} characters → {{ "%.0f"|format(policy.entropy_bits) }} bits of entropy each.</p>
+  {% for p in passwords %}<div class="pp-row" style="margin:4px 0"><code class="pp-mono" style="font-size:1.05rem">{{ p }}</code>
+    <button type="button" class="pp-btn small ghost" onclick="navigator.clipboard.writeText('{{ p|e }}'.replace(/&#39;/g,&quot;'&quot;)); this.textContent='Copied'">Copy</button></div>{% endfor %}
+  {% endif %}
+  <h3>📝 Or a passphrase</h3>
+  <div class="pp-row"><label>Words <input type="number" name="words" min="3" max="12" value="{{ words }}" style="width:70px"></label>
+    {% if phrase %}<code class="pp-mono" style="font-size:1.05rem">{{ phrase }}</code>{% endif %}
+    <span class="pp-muted">~{{ "%.0f"|format(phrase_bits) }} bits, easier to remember and type</span></div>
+</form>
+
+<form method="post" class="pp-card">
+  <h3 style="margin-top:0">🛡️ How strong is my password?</h3>
+  <div class="pp-row"><input type="password" name="check" placeholder="Type a password" style="flex:1" autocomplete="off"><button class="pp-btn">Check</button></div>
+  {% if report %}
+    {% set colors = ['#c4320a','#e8590c','#f59f00','#2f9e44','#12805c'] %}
+    <p class="pp-big" style="color:{{ colors[report.score] }}">{{ report.label }}</p>
+    <div class="pp-bar"><span style="width:{{ (report.score + 1) * 20 }}%;background:{{ colors[report.score] }}"></span></div>
+    <p>~{{ report.entropy_bits }} bits · an offline attacker guessing 10 billion/s needs about <b>{{ report.crack_time }}</b>.</p>
+    <ul>{% for w in report.warnings %}<li style="color:var(--bad)">{{ w }}</li>{% endfor %}{% for s in report.suggestions %}<li>{{ s }}</li>{% endfor %}</ul>
+  {% endif %}
+  <p class="pp-muted">Checked locally on your machine; nothing is stored.</p>
+</form>
+{% endblock %}

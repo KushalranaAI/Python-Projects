@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">20 end-to-end projects · 10 beginner · 5 intermediate · 5 advanced</p>
+  <h1>Learn to write <span class="grad">clean, object-oriented Python</span> by building real apps.</h1>
+  <p class="lead">Every project is a complete program: well-named classes for the problem, pure logic you can test,
+    a command-line interface, and a small Flask web UI you can use right here. Each one comes with a step-by-step
+    build guide, diagrams, the full source code and its test suite.</p>
+  <div class="row">
+    <a class="btn primary" href="{{ url_for('site.project', slug=levels['beginner'][0].slug) }}">Start with project 1 →</a>
+    <a class="btn" href="{{ url_for('site.guides') }}">Read the clean-code guides</a>
+  </div>
+  <div class="progress-wrap"><div class="progress"><span id="progress-bar"></span></div><span id="progress-text" class="muted"></span></div>
+</section>
+
+<section>
+  <h2>How every project is built</h2>
+  <p class="muted">The same professional workflow, 20 times. By the end it's a habit.</p>
+  {{ '''flowchart LR
+  A[💡 Problem &<br/>features] --> B[🧱 Model it:<br/>classes & data]
+  B --> C[⚙️ Pure logic<br/>no input/print]
+  C --> D[🧪 Tests<br/>pytest]
+  D --> E[⌨️ CLI<br/>thin layer]
+  C --> F[🌐 Flask UI<br/>thin layer]
+  E & F --> G[♻️ Refactor<br/>& extend]''' | mermaid }}
+  <div class="grid-3 small-cards">
+    <div class="card"><h4>🧱 Domain first</h4><p>Classes and functions that describe the problem: <code>Game</code>, <code>Account</code>, <code>Library</code>. They never call <code>input()</code> or <code>print()</code>.</p></div>
+    <div class="card"><h4>🔌 Thin interfaces</h4><p>The CLI and the Flask blueprint only translate between the user and the domain, so the same logic powers both.</p></div>
+    <div class="card"><h4>🧪 Tested</h4><p>Because the logic is pure, it's easy to test. Run any project's tests from its page with one click.</p></div>
+  </div>
+</section>
+
+{% for level, items in levels.items() %}
+<section>
+  <h2>{{ LEVEL_INFO[level][0] }} {{ LEVEL_INFO[level][1] }} projects</h2>
+  <p class="muted">{{ LEVEL_INFO[level][2] }}</p>
+  <div class="grid-cards">
+    {% for p in items %}
+      <a class="card project-card" href="{{ url_for('site.project', slug=p.slug) }}">
+        <div class="card-top"><span class="icon">{{ p.icon }}</span><span class="num">#{{ loop.index + (0 if level == 'beginner' else (10 if level == 'intermediate' else 15)) }}</span><span class="done-dot" data-done="{{ p.slug }}"></span></div>
+        <h3>{{ p.title }}</h3>
+        <p>{{ p.summary }}</p>
+        <div class="pills">{% for c in p.oop_concepts[:3] %}<span class="pill accent">{{ c }}</span>{% endfor %}<span class="pill">⏱ {{ p.time }}</span></div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+<section>
+  <h2>📘 Guides: the skills behind the projects</h2>
+  <div class="grid-cards">
+    {% for g in guides %}
+      <a class="card" href="{{ url_for('site.guide', slug=g.slug) }}"><h3>{{ g.icon }} {{ g.title }}</h3><p>{{ g.summary }}</p></a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

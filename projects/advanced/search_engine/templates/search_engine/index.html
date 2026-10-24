@@ -1,0 +1,23 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="get" class="pp-card">
+  <div class="pp-row"><input name="q" value="{{ q }}" placeholder='Search the course - try "unit test" or polymorphism -library' style="flex:1;font-size:1.05rem" autofocus>
+    <select name="ranker">{% for r in rankers %}<option {% if r == ranker %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+    <button class="pp-btn">Search</button></div>
+  <p class="pp-muted" style="margin-bottom:0">{{ idx|length }} documents · {{ '{:,}'.format(idx.vocabulary_size) }} distinct terms ·
+    try {% for e in examples %}<a class="pp-pill" href="?q={{ e|urlencode }}&ranker={{ ranker }}">{{ e }}</a>{% endfor %}</p>
+</form>
+{% if parsed %}<p class="pp-muted">Parsed query → terms <code>{{ parsed.terms }}</code>{% if parsed.phrases %} · phrases <code>{{ parsed.phrases }}</code>{% endif %}{% if parsed.excluded %} · excluded <code>{{ parsed.excluded }}</code>{% endif %} · {{ hits|length }} result(s)</p>{% endif %}
+{% for hit in hits %}
+<div class="pp-card">
+  <div class="pp-row" style="justify-content:space-between"><b>{{ hit.document.title }}</b><span class="pp-pill">score {{ '%.3f'|format(hit.score) }}</span></div>
+  <div class="pp-muted" style="font-size:.85rem">{{ hit.document.source }}</div>
+  <p>{% for text, marked in hit.snippet %}{% if marked %}<mark>{{ text }}</mark>{% else %}{{ text }}{% endif %}{% endfor %}</p>
+  <details><summary class="pp-muted">Why this score?</summary>
+    {% for term, part in hit.breakdown.items() %}<div style="display:grid;grid-template-columns:120px 1fr 70px;gap:8px;align-items:center;margin:3px 0">
+      <code>{{ term }}</code><div class="pp-bar"><span style="width:{{ (100 * part / hit.score) if hit.score else 0 }}%"></span></div><span>{{ '%.3f'|format(part) }}</span></div>{% endfor %}
+    <p class="pp-muted">tf in this doc / df across docs: {% for term in hit.breakdown %}{{ term }} {{ idx.term_frequency(term, hit.document.id) }}/{{ idx.document_frequency(term) }}{{ ', ' if not loop.last }}{% endfor %} · length {{ idx.lengths[hit.document.id] }} terms (avg {{ '%.0f'|format(idx.average_length) }})</p>
+  </details>
+</div>
+{% else %}{% if q %}<p class="pp-muted">No documents contain all those words. Try fewer words.</p>{% endif %}{% endfor %}
+{% endblock %}

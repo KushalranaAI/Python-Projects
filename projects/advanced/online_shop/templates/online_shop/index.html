@@ -1,0 +1,46 @@
+{% extends "project_base.html" %}
+{% macro money(c) %}${{ '{:,.2f}'.format(c / 100) }}{% endmacro %}
+{% block project %}
+{% include "_flashes.html" %}
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
+  {% for p in shop.products.values() %}
+  <form method="post" action="{{ url_for('.update_cart') }}" class="pp-card" style="text-align:center;margin:0">
+    <div style="font-size:2.2rem">{{ p.icon }}</div><b>{{ p.name }}</b><div>{{ money(p.price) }}</div>
+    <div class="pp-muted" style="font-size:.8rem">{{ shop.inventory.available(p.sku) }} in stock · {{ p.category }}</div>
+    <input type="hidden" name="sku" value="{{ p.sku }}"><input type="hidden" name="op" value="add">
+    <button class="pp-btn small" style="margin-top:6px" {% if not shop.inventory.available(p.sku) %}disabled{% endif %}>Add to cart</button>
+  </form>
+  {% endfor %}
+</div>
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+  <div class="pp-card"><b>🛒 Cart</b>
+    <table class="pp-table">{% for p, qty in items %}<tr><td>{{ p.icon }} {{ p.name }}</td>
+      <td><form method="post" action="{{ url_for('.update_cart') }}" class="pp-row"><input type="hidden" name="sku" value="{{ p.sku }}">
+        <input type="number" name="quantity" value="{{ qty }}" min="0" style="width:60px" onchange="this.form.submit()"></form></td>
+      <td style="text-align:right">{{ money(p.price * qty) }}</td></tr>
+    {% else %}<tr><td class="pp-muted">Empty - add something above.</td></tr>{% endfor %}</table>
+    <form method="post" action="{{ url_for('.coupon') }}" class="pp-row" style="margin-top:8px"><input name="code" placeholder="Coupon code" size="12"><button class="pp-btn small ghost">Apply</button>
+      {% for c in codes %}<button class="pp-pill" name="remove" value="{{ c }}" title="remove" style="cursor:pointer;background:none">{{ c }} ✕</button>{% endfor %}</form>
+    <table class="pp-table" style="margin-top:8px">
+      <tr><td>Subtotal</td><td style="text-align:right">{{ money(quote.subtotal) }}</td></tr>
+      {% if quote.discount %}<tr><td>Discount <span class="pp-pill">{{ quote.coupon.code }}: {{ quote.coupon.description }}</span></td><td style="text-align:right;color:var(--ok)">−{{ money(quote.discount) }}</td></tr>{% endif %}
+      <tr><td>Shipping {% if quote.shipping and quote.free_shipping_gap %}<span class="pp-muted">({{ money(quote.free_shipping_gap) }} more for free shipping)</span>{% endif %}</td><td style="text-align:right">{{ money(quote.shipping) if quote.shipping else 'free' }}</td></tr>
+      <tr><th>Total</th><th style="text-align:right">{{ money(quote.total) }}</th></tr>
+    </table>
+    <form method="post" action="{{ url_for('.checkout') }}"><button class="pp-btn" style="margin-top:8px" {% if cart.is_empty %}disabled{% endif %}>Place order</button></form>
+    <p class="pp-muted" style="font-size:.85rem">Try: {% for code, d in coupons.items() %}<code>{{ code }}</code> ({{ d.description }}){{ ', ' if not loop.last }}{% endfor %}. Only the best one applies.</p>
+  </div>
+  <div class="pp-card"><b>📦 Orders</b>
+    {% for o in orders %}<div style="border-bottom:1px solid var(--border);padding:8px 0">
+      <b>#{{ o.id }}</b> {{ money(o.total) }} <span class="pp-pill">{{ o.status.value }}</span>
+      <div class="pp-muted" style="font-size:.85rem">{{ o.lines|map(attribute='name')|join(', ') }}</div>
+      <form method="post" class="pp-row" style="margin-top:4px">{% for action in o.allowed_actions %}<button class="pp-btn small {{ 'danger' if action in ('cancel','return') else 'ghost' }}" formaction="{{ url_for('.order_action', order_id=o.id, action=action) }}">{{ action }}</button>{% endfor %}</form>
+    </div>{% else %}<p class="pp-muted">No orders yet.</p>{% endfor %}
+  </div>
+</div>
+<div class="pp-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="pp-card"><b>✉️ Outbox</b> <span class="pp-muted">(the Mailer subscriber)</span>{% for m in shop.mailer.outbox[-8:]|reverse %}<p style="margin:4px 0">{{ m }}</p>{% else %}<p class="pp-muted">No emails yet.</p>{% endfor %}</div>
+  <div class="pp-card"><b>🧾 Event log</b> <span class="pp-muted">(the AuditLog subscriber)</span><div class="pp-mono" style="font-size:.85rem">{% for e in shop.audit.entries[-10:]|reverse %}{{ e }}
+{% else %}-{% endfor %}</div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "project_base.html" %}
+{% block project %}
+<form method="post" class="pp-card">
+  <div class="pp-row" style="margin-bottom:8px"><span class="pp-muted">Samples:</span>
+    {% for name in samples %}<a class="pp-pill" href="?sample={{ name|urlencode }}">{{ name }}</a>{% endfor %}</div>
+  <textarea name="text" style="min-height:180px">{{ text }}</textarea>
+  <button class="pp-btn" style="margin-top:8px">Analyse</button>
+</form>
+{% if report %}
+<div class="pp-grid">
+  {% for label, value in [('Words', '{:,}'.format(report.words)), ('Unique words', '{:,}'.format(report.unique_words)), ('Sentences', report.sentences),
+                          ('Reading time', report.reading_time), ('Speaking time', report.speaking_time), ('Avg sentence', '%.1f words'|format(report.avg_sentence_length))] %}
+    <div class="pp-card pp-stat"><span class="pp-muted">{{ label }}</span><b>{{ value }}</b></div>
+  {% endfor %}
+</div>
+<div class="pp-card">
+  <b>Readability (Flesch): {{ report.reading_ease }}</b> - {{ report.reading_ease_label }}
+  <div class="pp-bar" style="margin:8px 0"><span style="width:{{ [[report.reading_ease, 0]|max, 100]|min }}%"></span></div>
+  <span class="pp-muted">Lexical diversity {{ '%.0f'|format(report.lexical_diversity * 100) }}% · avg word {{ '%.1f'|format(report.avg_word_length) }} letters · {{ report.paragraphs }} paragraph(s) · {{ report.syllables }} syllables</span>
+</div>
+<div class="pp-grid">
+  <div class="pp-card"><b>Most frequent words</b> <span class="pp-muted">(without stop words)</span>
+    {% set top = report.top_words[0][1] if report.top_words else 1 %}
+    {% for word, n in report.top_words %}
+      <div style="display:grid;grid-template-columns:110px 1fr 30px;gap:8px;align-items:center;margin:4px 0">
+        <span>{{ word }}</span><div class="pp-bar"><span style="width:{{ 100 * n / top }}%"></span></div><span>{{ n }}</span></div>
+    {% endfor %}
+  </div>
+  <div class="pp-card"><b>Word lengths</b>
+    {% set peak = report.length_histogram.values()|max %}
+    <div style="display:flex;align-items:flex-end;gap:4px;height:140px;margin-top:10px">
+      {% for length, n in report.length_histogram.items() %}
+        <div style="flex:1;text-align:center;font-size:.75rem"><div style="background:var(--accent);height:{{ 110 * n / peak }}px;border-radius:4px 4px 0 0" title="{{ n }} words"></div>{{ length }}{{ '+' if length == 12 }}</div>
+      {% endfor %}
+    </div>
+    <p class="pp-muted">Longest: {{ report.longest_words|join(', ') }}</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

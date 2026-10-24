@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ guide.title }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('site.guides') }}">Guides</a> · Guide {{ guide.order }}</p>
+<h1>{{ guide.icon }} {{ guide.title }}</h1>
+<p class="lead">{{ guide.summary }}</p>
+<article class="prose">{{ guide.body | markdown }}</article>
+<nav class="prevnext">
+  {% if prev %}<a class="card" href="{{ url_for('site.guide', slug=prev.slug) }}"><small>← Previous</small>{{ prev.title }}</a>{% else %}<span></span>{% endif %}
+  {% if next %}<a class="card right" href="{{ url_for('site.guide', slug=next.slug) }}"><small>Next →</small>{{ next.title }}</a>{% endif %}
+</nav>
+{% endblock %}
